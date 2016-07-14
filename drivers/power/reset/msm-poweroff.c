@@ -301,6 +301,12 @@ static void msm_restart_prepare(const char *cmd)
 #ifdef CONFIG_MACH_XIAOMI_SDM660
 	/* To preserve console-ramoops */
 	need_warm_reset = true;
+
+	/* Perform a warm reset upon panic or unspecified command */
+	if (in_panic || !cmd) {
+		qpnp_pon_system_pwr_off(PON_POWER_OFF_WARM_RESET);
+		cmd = NULL;
+	}
 #endif
 
 	/* Hard reset the PMIC unless memory contents must be maintained. */
