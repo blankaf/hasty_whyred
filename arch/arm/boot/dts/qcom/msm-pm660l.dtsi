@@ -214,10 +214,13 @@
 				qcom,default-state = "off";
 				linux,name = "red";
 				qcom,start-idx = <0>;
-				qcom,idx-len = <12>;
+				qcom,idx-len = <8>;
+				qcom,pause-lo = <500>;
+				qcom,pause-hi = <500>;
 				qcom,duty-pcts =
-					[01 0a 1e 28 3c 50 5a
-					64 46 1e 0a 01];
+					[00 0E 1C 2A 38 46 54 64];
+				qcom,lut-flags = <31>; /* loop, ramp up, reverse, pause hi, pause lo */
+				qcom,ramp-step-ms = <50>;
 				qcom,use-blink;
 			};
 
@@ -230,6 +233,7 @@
 				qcom,max-current = <12>;
 				qcom,default-state = "off";
 				linux,name = "green";
+				status = "disabled";
 			};
 
 			blue_led: qcom,rgb_2 {
@@ -241,6 +245,7 @@
 				qcom,max-current = <12>;
 				qcom,default-state = "off";
 				linux,name = "blue";
+				status = "disabled";
 			};
 		};
 
