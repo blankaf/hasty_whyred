@@ -5,5 +5,11 @@ config FINGERPRINT_GOODIX
 	help
 	  say y here to enable goodix fingerprint driver support!
 
+config FINGERPRINT_FPC1020
+	tristate "goodix gf5216 fingerprint drvier support"
+	help
+	  say y here to enable goodix fingerprint driver support!
+
+
 
 endmenu
