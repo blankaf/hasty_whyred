@@ -494,6 +494,7 @@ static void __init mm_init(void)
 	kaiser_init();
 }
 int fpsensor = 1;
+bool is_poweroff_charge = false;
 
 asmlinkage __visible void __init start_kernel(void)
 {
@@ -543,6 +544,12 @@ asmlinkage __visible void __init start_kernel(void)
 		fpsensor = 1;
 	} else {
 		fpsensor = 2;
+	}
+
+	p = NULL;
+	p = strstr(boot_command_line, "androidboot.mode=charger");
+	if (p) {
+		is_poweroff_charge = true;
 	}
 
 	parse_early_param();
