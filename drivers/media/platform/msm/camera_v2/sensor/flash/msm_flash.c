@@ -1,4 +1,5 @@
 /* Copyright (c) 2009-2017, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2018 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -591,6 +592,10 @@ static int32_t msm_flash_prepare(
 				__func__, __LINE__, ret);
 			return ret;
 		}
+	#ifdef CONFIG_MACH_XIAOMI_SDM660
+		flash_ctrl->func_tbl->camera_flash_off(flash_ctrl, NULL);
+	#endif
+
 		flash_ctrl->is_regulator_enabled = 1;
 	} else if (flash_ctrl->flash_state == MSM_CAMERA_FLASH_RELEASE &&
 		flash_ctrl->is_regulator_enabled) {
@@ -633,7 +638,11 @@ static int32_t msm_flash_low(
 				pr_debug("LED current clamped to %d\n",
 					curr);
 			}
+		#ifdef CONFIG_MACH_XIAOMI_SDM660
+			pr_err("XY low_flash_current[%d] = %d\n", i, curr);
+		#else
 			CDBG("low_flash_current[%d] = %d", i, curr);
+		#endif
 			led_trigger_event(flash_ctrl->torch_trigger[i],
 				curr);
 		}
@@ -670,7 +679,14 @@ static int32_t msm_flash_high(
 				pr_debug("LED flash_current[%d] clamped %d\n",
 					i, curr);
 			}
+		#ifdef CONFIG_MACH_XIAOMI_SDM660
+			if (!strcmp(flash_ctrl->switch_trigger_name, "switch0_trigger")) {
+				curr = 750;
+			}
+			pr_err("XY high_flash_current[%d] = %d\n", i, curr);
+		#else
 			CDBG("high_flash_current[%d] = %d", i, curr);
+		#endif
 			led_trigger_event(flash_ctrl->flash_trigger[i],
 				curr);
 		}
