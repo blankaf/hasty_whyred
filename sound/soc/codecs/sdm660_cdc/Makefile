@@ -4,3 +4,5 @@ snd-soc-dbmdx-objs := dbmdx.o dbmdx-spi.o dbmdx-i2c.o dbmdx-i2c-d2.o dbmdx-i2c-d
 obj-$(CONFIG_SND_SOC_DBMDX) += snd-soc-dbmdx.o
 snd-soc-dbmdx-snd-capture-objs := dbmdx-snd.o dbmdx-snd-pcm.o
 obj-$(CONFIG_SND_SOC_DBMDX_SND_CAPTURE) += snd-soc-dbmdx-snd-capture.o
+snd-soc-tas2557-objs := tas2557-core.o tas2557-regmap.o tas2557-codec.o tas2557-misc.o tiload.o
+obj-$(CONFIG_SND_SOC_TAS2557) += snd-soc-tas2557.o
