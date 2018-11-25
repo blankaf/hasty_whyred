@@ -1,4 +1,5 @@
 /* Copyright (c) 2012-2018, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2018 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -32,6 +33,9 @@
 
 #define VSYNC_DELAY msecs_to_jiffies(17)
 
+extern bool enable_gesture_mode;
+extern bool synaptics_gesture_func_on;
+char g_lcd_id[128];
 DEFINE_LED_TRIGGER(bl_led_trigger);
 
 void mdss_dsi_panel_pwm_cfg(struct mdss_dsi_ctrl_pdata *ctrl)
@@ -496,7 +500,12 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 			gpio_set_value((ctrl_pdata->disp_en_gpio), 0);
 			gpio_free(ctrl_pdata->disp_en_gpio);
 		}
-		gpio_set_value((ctrl_pdata->rst_gpio), 0);
+		if (!(enable_gesture_mode || synaptics_gesture_func_on)) {
+			if (strstr(g_lcd_id, "nt36672") == NULL) {
+				printk("td4310 pull down the rst.\n");
+				gpio_set_value((ctrl_pdata->rst_gpio), 0);
+			}
+		}
 		gpio_free(ctrl_pdata->rst_gpio);
 		if (gpio_is_valid(ctrl_pdata->lcd_mode_sel_gpio)) {
 			gpio_set_value(ctrl_pdata->lcd_mode_sel_gpio, 0);
@@ -2989,6 +2998,32 @@ error:
 	return -EINVAL;
 }
 
+static ssize_t msm_fb_lcd_name(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	ssize_t ret = 0;
+	sprintf(buf, "%s\n", g_lcd_id);
+	ret = strlen(buf) + 1;
+	return ret;
+}
+ static DEVICE_ATTR(lcd_name, 0664, msm_fb_lcd_name, NULL);
+static struct kobject *msm_lcd_name;
+static int msm_lcd_name_create_sysfs(void){
+	int ret;
+	msm_lcd_name = kobject_create_and_add("android_lcd", NULL);
+	if (msm_lcd_name == NULL) {
+		pr_info("msm_lcd_name_create_sysfs_ failed\n");
+		ret = -ENOMEM;
+		return ret;
+	}
+	ret = sysfs_create_file(msm_lcd_name,  &dev_attr_lcd_name.attr);
+	if (ret) {
+		pr_info("%s failed \n", __func__);
+		kobject_del(msm_lcd_name);
+	}
+	return 0;
+}
+
 int mdss_dsi_panel_init(struct device_node *node,
 	struct mdss_dsi_ctrl_pdata *ctrl_pdata,
 	int ndx)
@@ -3014,6 +3049,8 @@ int mdss_dsi_panel_init(struct device_node *node,
 		pr_info("%s: Panel Name = %s\n", __func__, panel_name);
 		strlcpy(&pinfo->panel_name[0], panel_name, MDSS_MAX_PANEL_LEN);
 	}
+	/*add for device name node */
+	strcpy(g_lcd_id, panel_name);
 	rc = mdss_panel_parse_dt(node, ctrl_pdata);
 	if (rc) {
 		pr_err("%s:%d panel dt parse failed\n", __func__, __LINE__);
@@ -3033,6 +3070,8 @@ int mdss_dsi_panel_init(struct device_node *node,
 	ctrl_pdata->panel_data.apply_display_setting =
 			mdss_dsi_panel_apply_display_setting;
 	ctrl_pdata->switch_mode = mdss_dsi_panel_switch_mode;
+
+	msm_lcd_name_create_sysfs();
 
 	return 0;
 }
