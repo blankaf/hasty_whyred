@@ -1,4 +1,5 @@
 /* Copyright (c) 2015-2017, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2018 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -56,6 +57,8 @@
 #define WCD_MBHC_SPL_HS_CNT  1
 
 static int det_extn_cable_en;
+static void wcd_enable_mbhc_supply(struct wcd_mbhc *mbhc,
+			enum wcd_mbhc_plug_type plug_type);
 module_param(det_extn_cable_en, int,
 		S_IRUGO | S_IWUSR | S_IWGRP);
 MODULE_PARM_DESC(det_extn_cable_en, "enable/disable extn cable detect");
@@ -887,7 +890,27 @@ static void wcd_mbhc_find_plug_and_report(struct wcd_mbhc *mbhc,
 						SND_JACK_HEADPHONE);
 			if (mbhc->current_plug == MBHC_PLUG_TYPE_HEADSET)
 				wcd_mbhc_report_plug(mbhc, 0, SND_JACK_HEADSET);
+
+        /*
+         * calculate impedance detection
+         * If Zl and Zr > 20k then it is special accessory
+         * otherwise unsupported cable.
+         */
+        if (mbhc->impedance_detect) {
+            mbhc->mbhc_cb->compute_impedance(mbhc, &mbhc->zl, &mbhc->zr);
+            if ((mbhc->zl > 20000) && (mbhc->zr > 20000)) {
+                pr_debug("%s: special accessory \n", __func__);
+                /* Toggle switch back */
+                if (mbhc->mbhc_cfg->swap_gnd_mic && mbhc->mbhc_cfg->swap_gnd_mic(mbhc->codec)) {
+                    pr_debug("%s: US_EU gpio present,flip switch again\n", __func__);
+                }
+                /* enable CS/MICBIAS for headset button detection to work */
+                wcd_enable_mbhc_supply(mbhc, MBHC_PLUG_TYPE_HEADSET);
+                wcd_mbhc_report_plug(mbhc, 1, SND_JACK_HEADSET);
+            } else {
 		wcd_mbhc_report_plug(mbhc, 1, SND_JACK_UNSUPPORTED);
+            }
+        }
 	} else if (plug_type == MBHC_PLUG_TYPE_HEADSET) {
 		if (mbhc->mbhc_cfg->enable_anc_mic_detect)
 			anc_mic_found = wcd_mbhc_detect_anc_plug_type(mbhc);
